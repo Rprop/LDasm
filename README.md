@@ -3,11 +3,12 @@ Lightweight x86 and x64 instructions disassembler, extracted from [libsplice](ht
 
 # Usage
 ```C++
-	unsigned char *pfunc = static_cast<unsigned char *>(evaluate_jmp(__$func__));
-	uint32_t l = 0;
-	ldasm_data ld;
-	do 
-	{
-		l += ldasm(pfunc + l, &ld);
-	} while (l < __$size__);
+#include <LDasm.h>
+unsigned char *pfunc = static_cast<unsigned char *>(evaluate_jmp(__$func__));
+uint_fast32_t l = 0;
+ldasm_data ld;
+do 
+{
+	l += ldasm(pfunc + l, &ld);
+} while (l < __$size__);
 ```
