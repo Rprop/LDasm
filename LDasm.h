@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /*
  *
- *	@modifier : rrrfff@foxmail.com
+ *  @modifier : rrrfff@foxmail.com
  *  https://github.com/rrrfff/LDasm
  *
  */
@@ -253,10 +253,10 @@ unsigned int __attribute__((weak)) ldasm(void *code, ldasm_data *ld)
 		/* 9E */    OP_NONE,
 		/* 9F */    OP_NONE,
 
-		/* A0 */    OP_DATA_I8,
-		/* A1 */    OP_DATA_I16_I32_I64,
-		/* A2 */    OP_DATA_I8,
-		/* A3 */    OP_DATA_I16_I32_I64,
+		/* A0 */	OP_DATA_I16_I32_I64, // OP_DATA_I8
+		/* A1 */	OP_DATA_I16_I32_I64,
+		/* A2 */	OP_DATA_I16_I32_I64, // OP_DATA_I8
+		/* A3 */	OP_DATA_I16_I32_I64,
 		/* A4 */    OP_NONE,
 		/* A5 */    OP_NONE,
 		/* A6 */    OP_NONE,
@@ -732,7 +732,7 @@ unsigned int __attribute__((weak)) ldasm(void *code, ldasm_data *ld)
                         ld->flags |= F_RELATIVE;
                     } //if
                 } else if (pr_67) {
-                    if (rm == 6u) ld->disp_size = 2;
+                    if (rm == 6u) ld->disp_size = 2u;
                 } else {
                     if (rm == 5u) ld->disp_size = 4u;
                 } //if
@@ -759,9 +759,9 @@ unsigned int __attribute__((weak)) ldasm(void *code, ldasm_data *ld)
     }
     
     /* phase 4: parse immediate data */
-    if (rexw && f & OP_DATA_I16_I32_I64)
+    if ((rexw || (is64 && op >= 0xA0u && op <= 0xA3u)) && f & OP_DATA_I16_I32_I64)
         ld->imm_size = 8u;
-    else if (f & OP_DATA_I16_I32 || f & OP_DATA_I16_I32_I64) 
+    else if (f & OP_DATA_I16_I32 || f & OP_DATA_I16_I32_I64)
         ld->imm_size = 4u - (pr_66 << 1u);
     
     /* if exist, add OP_DATA_I16 and OP_DATA_I8 size */
@@ -776,7 +776,7 @@ unsigned int __attribute__((weak)) ldasm(void *code, ldasm_data *ld)
     } //if
     
     /* instruction is too long */
-    if (s > 15) ld->flags |= F_INVALID;
+    if (s > 15u) ld->flags |= F_INVALID;
     
     return s;
 }
@@ -788,30 +788,30 @@ unsigned int __attribute__((weak)) ldasm(void *code, ldasm_data *ld)
  Return:
 	target address
  */
-void *__attribute__((weak)) evaluate_jmp(void *code)
+void *__attribute__((weak)) evaluate_jmp(const void *code)
 {
-	unsigned char *addr = static_cast<unsigned char *>(code);
-	do {
-		switch (addr[0]) {
-		case 0xe9u:
-			addr = addr + 5 + *reinterpret_cast<uint32_t *>(addr + 1);
-			break;
-		case 0xebu:
-			addr = addr + 3 + *reinterpret_cast<uint16_t *>(addr + 1);
-			break;
-		case 0xffu:
-			if (addr[1] == 0x25u) {
+    unsigned char *addr = static_cast<unsigned char *>(const void *(code));
+    do {
+        switch (addr[0]) {
+        case 0xe9u:
+            addr = addr + 5 + *reinterpret_cast<uint32_t *>(addr + 1);
+            break;
+        case 0xebu:
+            addr = addr + 3 + *reinterpret_cast<uint16_t *>(addr + 1);
+            break;
+        case 0xffu:
+            if (addr[1] == 0x25u) {
 #ifdef __LP64__
-				addr = reinterpret_cast<unsigned char *>(*reinterpret_cast<uint64_t *>(addr + 6 + *reinterpret_cast<uint32_t *>(addr + 2)));
+                addr = reinterpret_cast<unsigned char *>(*reinterpret_cast<uint64_t *>(addr + 6 + *reinterpret_cast<uint32_t *>(addr + 2)));
 #else 
-				addr = reinterpret_cast<unsigned char *>(*reinterpret_cast<uint32_t *>(*reinterpret_cast<uint32_t *>(addr + 2)));
+                addr = reinterpret_cast<unsigned char *>(*reinterpret_cast<uint32_t *>(*reinterpret_cast<uint32_t *>(addr + 2)));
 #endif // __LP64__
-				break;
-			} //if
-		default:
-			code = NULL;
-		}
-	} while (code);
+                break;
+            } //if
+        default:
+            code = NULL;
+        }
+    } while (code);
 
-	return addr;
+    return addr;
 }
